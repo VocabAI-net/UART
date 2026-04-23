@@ -432,12 +432,17 @@ export default function App() {
     const unsubOrders = onSnapshot(
       query(
         collection(db, 'orders'), 
-        where('customerId', '==', customerId),
-        orderBy('createdAt', 'desc')
+        where('customerId', '==', customerId)
       ), 
       (snap) => {
         const data = snap.docs.map(doc => ({ ...doc.data() as CompleteOrder, id: doc.id }));
-        setPlacedOrders(data);
+        // Sort manually in memory to avoid index requirement
+        const sorted = data.sort((a, b) => {
+          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return dateB - dateA;
+        });
+        setPlacedOrders(sorted);
       }
     );
 
