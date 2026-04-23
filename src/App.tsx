@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, onSnapshot, addDoc, setDoc, query, orderBy, doc, getDoc, where } from 'firebase/firestore';
 import { db } from './lib/firebase';
@@ -41,6 +41,17 @@ import { Product, CustomizationSize, CustomizationType, Category, CartItem, Comp
 
 // Initialize Gemini
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+
+const CosmosBackground = lazy(() => import('./components/CosmosBackground'));
+const OrderHistory = lazy(() => import('./components/OrderHistory'));
+
+// Helper to calculate data size (in bytes)
+const getDataSize = (data: any) => {
+  const bytes = new TextEncoder().encode(JSON.stringify(data)).length;
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+};
 
 // Helper to convert and compress images
 const compressImage = (file: File | string, maxWidth = 600, quality = 0.5): Promise<string> => {
@@ -96,38 +107,7 @@ const toBase64 = async (file: File | string): Promise<string> => {
 
 // --- Components ---
 
-const CosmosBackground = () => (
-  <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-cosmos-void">
-    <div className="absolute inset-0 starfield opacity-30" />
-    <div className="absolute inset-0 art-grain opacity-10 sm:opacity-20" />
-    
-    {/* Optimized Splatters for Mobile */}
-    <div className="splatter splatter-orange top-[5%] left-[5%] w-[250px] h-[250px] sm:w-[400px] sm:h-[400px] animate-float" />
-    <div className="splatter splatter-lime bottom-[5%] right-[5%] w-[200px] h-[200px] sm:w-[350px] sm:h-[350px] animate-float hidden sm:block" style={{ animationDelay: '1s' }} />
-    <div className="splatter splatter-pink top-[35%] right-[10%] w-[200px] h-[200px] sm:w-[300px] sm:h-[300px] animate-float" style={{ animationDelay: '2s' }} />
-    <div className="splatter splatter-cyan bottom-[25%] left-[15%] w-[300px] h-[300px] sm:w-[450px] sm:h-[450px] animate-float hidden sm:block" style={{ animationDelay: '3s' }} />
-    
-    <motion.div 
-      animate={{ 
-        scale: [1, 1.2, 1],
-        opacity: [0.05, 0.15, 0.05],
-      }}
-      transition={{ duration: 30, repeat: Infinity }}
-      className="absolute top-[-10%] left-[-5%] w-[100%] h-[100%] bg-cosmos-purple/10 nebula blur-[80px] sm:blur-[120px]"
-    />
-    <motion.div 
-      animate={{ 
-        scale: [1.3, 0.9, 1.3],
-        rotate: [0, -120, 0],
-        opacity: [0.05, 0.25, 0.05],
-      }}
-      transition={{ duration: 50, repeat: Infinity, ease: "easeInOut" }}
-      className="absolute bottom-[-20%] right-[-10%] w-[90%] h-[90%] bg-cosmos-cyan/15 nebula blur-[100px]"
-    />
-  </div>
-);
-
-const Header = ({ onHome, onCatalog, onGallery, onOrders, onCart, cartCount, onMenuToggle, showMobileMenu }: { 
+const Header = React.memo(({ onHome, onCatalog, onGallery, onOrders, onCart, cartCount, onMenuToggle, showMobileMenu }: { 
   onHome: () => void; 
   onCatalog: () => void;
   onGallery: () => void;
@@ -137,8 +117,9 @@ const Header = ({ onHome, onCatalog, onGallery, onOrders, onCart, cartCount, onM
   onMenuToggle: () => void;
   showMobileMenu: boolean;
 }) => (
-  <header className="fixed top-0 left-0 right-0 z-50 bg-white/5 backdrop-blur-2xl border-b border-white/5 h-[72px]">
+  <header className="fixed top-0 left-0 right-0 z-50 bg-black/40 backdrop-blur-xl border-b border-white/5 h-[72px] will-change-transform">
     <div className="max-w-7xl mx-auto px-4 sm:px-10 h-full flex items-center justify-between relative overflow-hidden">
+
       {/* Decorative splatter in header */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-art-pink/20 blur-[40px] rounded-full pointer-events-none" />
       
@@ -271,22 +252,16 @@ const Header = ({ onHome, onCatalog, onGallery, onOrders, onCart, cartCount, onM
       </AnimatePresence>
     </div>
   </header>
-);
+));
 
-const Hero = ({ onStart }: { onStart: () => void }) => (
+const Hero = React.memo(({ onStart }: { onStart: () => void }) => (
   <section className="pt-16 sm:pt-24 pb-6 sm:pb-12 px-4 sm:px-10">
     <div className="max-w-7xl mx-auto">
-      <div className="relative overflow-hidden rounded-[24px] sm:rounded-[48px] bg-cosmos-void sm:aspect-[21/9] min-h-[350px] sm:min-h-[500px] flex items-center px-6 sm:px-16 group border border-white/10 shadow-[0_0_80px_rgba(0,0,0,0.5)] art-grain">
+      <div className="relative overflow-hidden rounded-[24px] sm:rounded-[48px] bg-black sm:aspect-[21/9] min-h-[350px] sm:min-h-[500px] flex items-center px-6 sm:px-16 group border border-white/10 shadow-[0_0_80px_rgba(0,0,0,0.5)] art-grain will-change-transform">
         <CosmosBackground />
-        <div className="absolute inset-0 bg-gradient-to-r from-cosmos-void via-transparent to-transparent z-[1]" />
-        <img 
-          src="https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&q=60&w=1200" 
-          alt="Abstract Art" 
-          className="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-overlay group-hover:scale-105 transition-transform duration-[5s]"
-          referrerPolicy="no-referrer"
-          loading="eager"
-          decoding="async"
-        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black via-transparent to-transparent z-[1]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-cosmos-purple/20 via-black to-cosmos-cyan/10" />
+
         <div className="relative z-10 max-w-2xl py-10 sm:py-0">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -326,7 +301,7 @@ const Hero = ({ onStart }: { onStart: () => void }) => (
       </div>
     </div>
   </section>
-);
+));
 
 interface ProductCardProps {
   product: Product;
@@ -336,30 +311,32 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect }) => (
   <motion.div 
     whileHover={{ y: -8, scale: 1.01 }}
-    className="group cursor-pointer cosmos-card art-grain p-3 sm:p-5 rounded-2xl sm:rounded-[32px] transition-all h-full flex flex-col relative"
+    transition={{ type: "spring", stiffness: 300 }}
+    className="group cursor-pointer cosmos-card p-3 sm:p-5 rounded-2xl sm:rounded-[32px] h-full flex flex-col relative will-change-transform"
     onClick={() => onSelect(product)}
   >
     <div className="aspect-square rounded-xl sm:rounded-2xl overflow-hidden bg-white/5 mb-3 sm:mb-5 relative border border-white/10 paint-border">
       <img 
         src={product.image} 
         alt={product.name} 
-        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+        className="w-full h-full object-cover sm:group-hover:scale-110 transition-transform duration-500"
         referrerPolicy="no-referrer"
         loading="lazy"
-        decoding="async"
+        width={400}
+        height={400}
       />
-      <div className="absolute top-2 left-2 sm:top-3 sm:left-3 px-2 sm:px-4 py-1 sm:py-1.5 bg-cosmos-purple/80 backdrop-blur-md text-white text-[8px] sm:text-[9px] font-black uppercase tracking-[0.2em] rounded-full shadow-xl">
+      <div className="absolute top-2 left-2 px-2 py-1 bg-cosmos-purple/80 backdrop-blur-md text-white text-[8px] font-black uppercase tracking-[0.2em] rounded-full">
         {product.category}
       </div>
     </div>
     <div className="flex-1">
-      <h3 className="font-display font-black text-sm sm:text-xl mb-1 sm:mb-2 text-white group-hover:text-cosmos-cyan transition-colors tracking-tight leading-tight">{product.name}</h3>
-      <p className="text-white/50 text-[9px] sm:text-[11px] mb-3 sm:mb-4 line-clamp-2 leading-relaxed font-medium tracking-wide uppercase">{product.description}</p>
+      <h3 className="font-display font-black text-sm sm:text-xl mb-1 text-white group-hover:text-cosmos-cyan transition-colors tracking-tight leading-tight">{product.name}</h3>
+      <p className="text-white/50 text-[9px] sm:text-[11px] mb-3 line-clamp-2 uppercase">{product.description}</p>
     </div>
-    <div className="flex items-center justify-between pt-3 sm:pt-5 border-t border-white/10">
-      <span className="font-display font-black text-sm sm:text-xl text-art-lime">{product.price.toLocaleString()} so'm</span>
-      <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-gradient-to-br from-art-pink to-cosmos-purple group-hover:text-white group-hover:rotate-12 transition-all">
-        <Plus className="w-4 h-4 sm:w-6 sm:h-6" />
+    <div className="flex items-center justify-between pt-3 border-t border-white/10">
+      <span className="font-display font-black text-sm sm:text-xl text-art-lime">{product.price.toLocaleString()} s.</span>
+      <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-art-pink group-hover:text-white transition-all">
+        <Plus className="w-4 h-4" />
       </div>
     </div>
   </motion.div>
@@ -404,8 +381,8 @@ export default function App() {
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [isOrderSubmitting, setIsOrderSubmitting] = useState(false);
-  const [dbProducts, setDbProducts] = useState<Product[]>(BASE_PRODUCTS);
-  const [dbGallery, setDbGallery] = useState<Product[]>(READY_DESIGNS);
+  const [dbProducts, setDbProducts] = useState<Product[]>([]);
+  const [dbGallery, setDbGallery] = useState<Product[]>([]);
   
   // User identification for order history (without login)
   const [customerId] = useState(() => {
@@ -420,13 +397,17 @@ export default function App() {
   // Real-time synchronization for core data
   useEffect(() => {
     const unsubProducts = onSnapshot(collection(db, 'products'), (snap) => {
-      const data = snap.docs.map(doc => ({ ...doc.data() as Product, id: doc.id }));
-      if (data.length > 0) setDbProducts(data);
+      const data = snap.docs
+        .map(doc => ({ ...doc.data() as Product, id: doc.id }))
+        .filter(p => p.image && !p.image.includes('unsplash.com') && !p.image.includes('picsum.photos'));
+      setDbProducts(data);
     });
     
     const unsubGallery = onSnapshot(collection(db, 'gallery'), (snap) => {
-      const data = snap.docs.map(doc => ({ ...doc.data() as Product, id: doc.id }));
-      if (data.length > 0) setDbGallery(data);
+      const data = snap.docs
+        .map(doc => ({ ...doc.data() as Product, id: doc.id }))
+        .filter(p => p.image && !p.image.includes('unsplash.com') && !p.image.includes('picsum.photos'));
+      setDbGallery(data);
     });
 
     const unsubOrders = onSnapshot(
@@ -559,16 +540,20 @@ export default function App() {
       }
 
       // 3. Notify Admin Bot
+      const payload = {
+        requestId: reqRef.id,
+        productName: selectedProduct.name,
+        size: customSize,
+        type: customType,
+        image: botImage
+      };
+      
+      console.log(`[NETWORK TEST] Price Request Payload Size: ${getDataSize(payload)}`);
+
       const response = await fetch('/api/request-price', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          requestId: reqRef.id,
-          productName: selectedProduct.name,
-          size: customSize,
-          type: customType,
-          image: botImage
-        })
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
@@ -644,6 +629,8 @@ export default function App() {
     };
 
     try {
+      console.log(`[NETWORK TEST] Order Payload Size: ${getDataSize(newOrder)}`);
+      
       await setDoc(doc(db, 'orders', orderId), {
         ...newOrder,
         createdAt: new Date().toISOString(),
@@ -1048,70 +1035,9 @@ export default function App() {
           )}
 
           {view === 'orders' && (
-            <motion.div 
-              key="orders-view"
-              initial={{ opacity: 0, x: -100 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 100 }}
-              className="pt-20 sm:pt-24 min-h-screen px-4 sm:px-10 pb-20 sm:pb-32"
-            >
-              <div className="max-w-4xl mx-auto">
-                <div className="flex items-center justify-between mb-8 sm:mb-16">
-                  <button onClick={handleBack} className="flex items-center gap-2 text-white/40 hover:text-white font-black text-[9px] sm:text-xs uppercase tracking-widest transition-colors">
-                    <ArrowLeft className="w-4 h-4" /> Orqaga
-                  </button>
-                  <h1 className="text-2xl sm:text-5xl font-display font-black text-white uppercase tracking-tighter">Buyurtmalarim</h1>
-                </div>
-
-                {placedOrders.length === 0 ? (
-                  <div className="cosmos-card rounded-[32px] sm:rounded-[48px] p-10 sm:p-20 text-center flex flex-col items-center gap-4 sm:gap-6 border border-white/5">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/5 flex items-center justify-center text-white/20">
-                      <History className="w-8 h-8 sm:w-10 sm:h-10" />
-                    </div>
-                    <div>
-                      <h2 className="text-xl sm:text-2xl font-display font-bold text-white mb-2 uppercase">Buyurtmalar mavjud emas</h2>
-                      <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.2em]">Siz hali birorta ham buyurtma bermadingiz</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-6 sm:space-y-8">
-                    {placedOrders.map(order => (
-                      <div key={order.id} className="cosmos-card rounded-2xl sm:rounded-[40px] overflow-hidden border border-white/5 group">
-                        <div className="p-5 sm:p-10 border-b border-white/5 flex flex-wrap items-center justify-between gap-4 sm:gap-6 bg-white/[0.02]">
-                          <div className="space-y-0.5 sm:space-y-1">
-                            <div className="text-[9px] sm:text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">ID: {order.id}</div>
-                            <div className="text-lg sm:text-xl font-display font-black text-white uppercase tracking-tight">{order.date}</div>
-                          </div>
-                          <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-2">
-                             <div className="px-3 py-1 sm:px-4 sm:py-1.5 bg-cosmos-cyan text-cosmos-void text-[8px] sm:text-[10px] font-black uppercase tracking-widest rounded-full shadow-[0_0_20px_rgba(0,242,255,0.2)] whitespace-nowrap">
-                               {order.status}
-                             </div>
-                             <div className="text-lg sm:text-xl font-display font-black text-art-lime">{order.totalAmount.toLocaleString()} so'm</div>
-                          </div>
-                        </div>
-                        <div className="p-5 sm:p-8 space-y-4 sm:space-y-6">
-                           {order.items.map(item => (
-                             <div key={item.id} className="flex items-center gap-4 sm:gap-6">
-                               <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-white/5 border border-white/10 overflow-hidden flex-shrink-0">
-                                 <img src={item.uploadedImage || item.product.image} loading="lazy" className="w-full h-full object-cover" />
-                               </div>
-                               <div className="flex-1">
-                                 <div className="text-[11px] sm:text-xs font-black text-white uppercase tracking-tight mb-0.5 sm:mb-1">{item.product.name}</div>
-                                 <div className="text-[7px] sm:text-[8px] font-bold text-white/30 uppercase tracking-widest">{item.customSize} // {item.customType}</div>
-                               </div>
-                               <div className="text-[12px] sm:text-sm font-black text-white/80">{item.totalPrice.toLocaleString()} so'm</div>
-                             </div>
-                           ))}
-                        </div>
-                        <div className="px-5 py-4 sm:px-8 sm:py-6 bg-white/[0.01] flex items-center justify-center border-t border-white/5">
-                           <button className="text-[9px] sm:text-[10px] font-black text-white/30 hover:text-cosmos-cyan uppercase tracking-[0.3em] transition-all">Qayta buyurtma berish</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </motion.div>
+            <Suspense fallback={<div className="min-h-screen items-center justify-center flex"><div className="w-12 h-12 border-4 border-art-pink border-t-transparent rounded-full animate-spin" /></div>}>
+              <OrderHistory placedOrders={placedOrders} onBack={handleBack} />
+            </Suspense>
           )}
 
           {view === 'customize' && selectedProduct && (
@@ -1138,7 +1064,9 @@ export default function App() {
                   <div className="order-1 lg:order-2 lg:col-span-8">
                     <div className="cosmos-card rounded-[32px] sm:rounded-[56px] lg:min-h-[700px] min-h-[300px] sm:min-h-[500px] relative overflow-hidden flex items-center justify-center p-3 sm:p-12 art-grain border border-white/10 shadow-2xl">
                       <div className="absolute inset-0 bg-cosmos-void">
-                        <CosmosBackground />
+                        <Suspense fallback={<div className="absolute inset-0 bg-black" />}>
+                          <CosmosBackground />
+                        </Suspense>
                         <div className="absolute inset-0 bg-gradient-to-t from-cosmos-void/60 via-transparent to-cosmos-void/20" />
                       </div>
                       
@@ -1270,24 +1198,28 @@ export default function App() {
                         </button>
                       </div>
                       <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
-                        {BASE_PRODUCTS.map(p => (
-                          <button 
-                            key={p.id}
-                            onClick={() => {
-                              setSelectedProduct(p);
-                              setIsPriceRequested(false);
-                              setCustomPrice(null);
-                              setPriceRequestId(null);
-                            }}
-                            className={`flex-shrink-0 w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl overflow-hidden border-2 transition-all p-1 group relative ${
-                              selectedProduct.id === p.id 
-                                ? 'border-art-orange shadow-[0_0_15px_rgba(255,102,0,0.3)]' 
-                                : 'border-white/10 bg-white/5 hover:border-white/20'
-                            }`}
-                          >
-                            <img src={p.image} alt={p.name} className="w-full h-full object-cover rounded-lg sm:rounded-xl" />
-                          </button>
-                        ))}
+                        {dbProducts.length > 0 ? (
+                          dbProducts.map(p => (
+                            <button 
+                              key={p.id}
+                              onClick={() => {
+                                setSelectedProduct(p);
+                                setIsPriceRequested(false);
+                                setCustomPrice(null);
+                                setPriceRequestId(null);
+                              }}
+                              className={`flex-shrink-0 w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl overflow-hidden border-2 transition-all p-1 group relative ${
+                                selectedProduct.id === p.id 
+                                  ? 'border-art-orange shadow-[0_0_15px_rgba(255,102,0,0.3)]' 
+                                  : 'border-white/10 bg-white/5 hover:border-white/20'
+                              }`}
+                            >
+                              <img src={p.image} alt={p.name} className="w-full h-full object-cover rounded-lg sm:rounded-xl" />
+                            </button>
+                          ))
+                        ) : (
+                          <div className="text-[8px] font-black text-white/20 uppercase tracking-widest py-4">Asoslar kutilmoqda...</div>
+                        )}
                       </div>
                     </div>
 
@@ -1702,7 +1634,9 @@ export default function App() {
             </div>
             <div className="mt-4 flex justify-center md:justify-end">
               <div className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center overflow-hidden">
-                <img src="https://picsum.photos/seed/artist/50/50" alt="Artist" className="w-full h-full object-cover grayscale opacity-50" />
+                <div className="w-full h-full bg-white/5 flex items-center justify-center text-white/10 uppercase font-black text-[8px] tracking-widest">
+                  Studio
+                </div>
               </div>
             </div>
           </div>
