@@ -8,7 +8,6 @@ import { initializeApp as initializeClient } from "firebase/app";
 import { getFirestore as getClientFirestore, doc, updateDoc, getDoc, collection, query, where, getDocs, initializeFirestore, terminate, deleteDoc, addDoc, limit, orderBy, writeBatch } from "firebase/firestore";
 import fs from "fs";
 
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -28,7 +27,7 @@ async function compressTelegramPhoto(url: string): Promise<string> {
 }
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Load Firebase Config
 const firebaseConfig = JSON.parse(fs.readFileSync(path.join(__dirname, 'firebase-applet-config.json'), 'utf-8'));
@@ -584,7 +583,7 @@ if (bot) {
       console.error("Seeding error:", err);
     }
   };
-  seedData();
+  // seedData();
 
   process.once('SIGINT', () => bot.stop('SIGINT'));
   process.once('SIGTERM', () => bot.stop('SIGTERM'));
