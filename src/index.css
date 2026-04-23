@@ -1,0 +1,239 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  
+  --color-cosmos-deep: #050510;
+  --color-cosmos-void: #020205;
+  --color-cosmos-star: #FFFFFF;
+  --color-cosmos-purple: #B026FF;
+  --color-cosmos-cyan: #00F2FF;
+  --color-cosmos-magic: #FF00E5;
+  --color-art-pink: #FF3366;
+  --color-art-orange: #FF6600;
+  --color-art-lime: #CCFF00;
+  
+  --color-primary: var(--color-cosmos-purple);
+  --color-secondary: var(--color-cosmos-cyan);
+  --color-dark: var(--color-cosmos-void);
+  --color-bg: var(--color-cosmos-deep);
+}
+
+@layer base {
+  :root {
+    /* Fluid typography base */
+    font-size: 14px;
+  }
+
+  @media (min-width: 640px) {
+    :root {
+      font-size: 16px;
+    }
+  }
+
+  body {
+    @apply bg-cosmos-deep text-white antialiased font-sans overflow-x-hidden;
+    background-image: 
+      radial-gradient(circle at 0% 0%, var(--color-art-orange) 0%, transparent 25%),
+      radial-gradient(circle at 100% 100%, var(--color-art-lime) 0%, transparent 25%),
+      radial-gradient(circle at 50% 50%, #101020 0%, transparent 100%);
+    background-attachment: fixed;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  body::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
+
+  /* Universal scrollbar hide */
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  *::-webkit-scrollbar {
+    display: none;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  /* Artistic Canvas Card */
+  .cosmos-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 
+      inset 0 0 20px rgba(255, 255, 255, 0.05),
+      0 10px 30px rgba(0, 0, 0, 0.5);
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  
+  .cosmos-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--color-art-pink);
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 
+      0 0 40px rgba(255, 51, 102, 0.2),
+      0 20px 50px rgba(0, 0, 0, 0.6);
+  }
+
+  /* Vibrant Flow Button */
+  .flow-button {
+    position: relative;
+    background: linear-gradient(90deg, 
+      var(--color-art-orange), 
+      var(--color-art-pink), 
+      var(--color-cosmos-purple), 
+      var(--color-cosmos-cyan), 
+      var(--color-art-lime),
+      var(--color-art-orange)
+    );
+    background-size: 300% 100%;
+    color: white;
+    transition: all 0.5s ease;
+    border: none;
+    overflow: hidden;
+  }
+
+  .flow-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .flow-button:hover::before {
+    opacity: 1;
+  }
+
+  .flow-button:hover {
+    animation: flow 3s linear infinite;
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 0 30px rgba(255, 51, 102, 0.5);
+  }
+
+  /* Artistic Splatter Effect */
+  .splatter {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, var(--color-art-pink) 0%, transparent 70%);
+    filter: blur(40px);
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  .splatter-orange { background: radial-gradient(circle, var(--color-art-orange) 0%, transparent 70%); }
+  .splatter-lime { background: radial-gradient(circle, var(--color-art-lime) 0%, transparent 70%); }
+  .splatter-cyan { background: radial-gradient(circle, var(--color-cosmos-cyan) 0%, transparent 70%); }
+
+  @keyframes flow {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 100% 0%; }
+  }
+
+  /* Art Texture Overlay */
+  .art-grain {
+    position: relative;
+  }
+  
+  .art-grain::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    opacity: 0.15;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    z-index: 10;
+  }
+
+  /* Paint Stroke Border */
+  .paint-border {
+    position: relative;
+  }
+
+  .paint-border::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border: 2px solid transparent;
+    border-radius: inherit;
+    background: linear-gradient(135deg, var(--color-art-orange), var(--color-art-pink), var(--color-art-lime)) border-box;
+    -webkit-mask:
+      linear-gradient(#fff 0 0) padding-box, 
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: destination-out;
+    mask-composite: exclude;
+    opacity: 0.6;
+    filter: blur(1px);
+  }
+
+  /* Star Field Layer */
+  .starfield {
+    background-image: 
+      radial-gradient(1px 1px at 10% 20%, white, transparent),
+      radial-gradient(1px 1px at 40% 70%, white, transparent),
+      radial-gradient(1px 1px at 70% 40%, white, transparent),
+      radial-gradient(1px 1px at 15% 15%, lightblue, transparent);
+    background-size: 500px 500px;
+    animation: twinkle 8s linear infinite;
+  }
+
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 0.4; }
+  }
+
+  /* Nebula Glow */
+  .nebula {
+    filter: blur(60px);
+    border-radius: 50%;
+    mix-blend-mode: screen;
+  }
+}
+
+@media (min-width: 640px) {
+  .nebula {
+    filter: blur(100px);
+  }
+}
+
+.animate-float {
+  animation: float 8s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  33% { transform: translateY(-30px) translateX(10px); }
+  66% { transform: translateY(-10px) translateX(-20px); }
+}
+
+/* Mobile-friendly bottom-bar safe area */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Responsive spacing utilities */
+.section-compact {
+  @apply py-8 sm:py-16 md:py-24 lg:py-32;
+}
+
+.section-gap {
+  @apply space-y-12 sm:space-y-24 md:space-y-32;
+}
+

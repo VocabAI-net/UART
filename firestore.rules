@@ -1,0 +1,67 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    
+    // Entity validations
+    function isValidOrder(data) {
+      return data.keys().hasAll(['id', 'customerId', 'items', 'totalAmount', 'status', 'date', 'createdAt'])
+        && data.id is string
+        && data.customerId is string
+        && data.items is list
+        && data.totalAmount is number
+        && data.totalAmount >= 0
+        && data.status == 'Kutilmoqda'
+        && data.date is string
+        && data.createdAt is string;
+    }
+
+    function isValidPriceRequest(data) {
+      return data.keys().hasAll(['productId', 'productName', 'size', 'type', 'status', 'createdAt'])
+        && data.productId is string
+        && data.productName is string
+        && data.size is string
+        && data.type is string
+        && data.status == 'pending'
+        && data.createdAt is string;
+    }
+
+    // Products collection
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if true; // Broadened for bot access (Client SDK fallback)
+    }
+
+    // Gallery collection
+    match /gallery/{galleryId} {
+      allow read: if true;
+      allow write: if true; // Broadened for bot access (Client SDK fallback)
+    }
+
+    // Orders collection
+    match /orders/{orderId} {
+      allow create: if isValidOrder(incoming());
+      allow read: if true; 
+      allow update: if true; // Allow bot to confirm payments
+      allow delete: if true; // Allow bot to delete orders
+    }
+
+    // Price requests collection
+    match /price_requests/{requestId} {
+      allow create: if isValidPriceRequest(incoming());
+      allow get: if true;
+      allow update: if true; // Temporarily broadened for debugging/admin fallback
+      allow list, delete: if false; 
+    }
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Base products for customization",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "price": { "type": "number" },
+        "image": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "required": ["id", "name", "category", "price", "image"]
+    },
+    "GalleryItem": {
+      "title": "Gallery Item",
+      "description": "Ready-made designs in the gallery",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "price": { "type": "number" },
+        "image": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "required": ["id", "name", "category", "price", "image"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer orders",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "items": { "type": "array" },
+        "totalAmount": { "type": "number" },
+        "status": { "type": "string" },
+        "date": { "type": "string" },
+        "receiptUrl": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" }
+      },
+      "required": ["id", "items", "totalAmount", "status", "date"]
+    },
+    "PriceRequest": {
+      "title": "Price Request",
+      "description": "Custom design price requests",
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "size": { "type": "string" },
+        "type": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "completed"] },
+        "price": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["productId", "productName", "size", "type", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/products": {
+      "schema": "Product",
+      "description": "Collection of base products"
+    },
+    "/gallery": {
+      "schema": "GalleryItem",
+      "description": "Collection of gallery items"
+    },
+    "/orders": {
+      "schema": "Order",
+      "description": "Collection of customer orders"
+    },
+    "/price_requests": {
+      "schema": "PriceRequest",
+      "description": "Collection of custom design price requests"
+    }
+  }
+}
